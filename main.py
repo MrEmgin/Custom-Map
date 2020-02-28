@@ -45,9 +45,11 @@ class Ui_MainWindow(object):
         self.radioButton_3.setObjectName("radioButton_3")
         self.buttonGroup.addButton(self.radioButton_3)
         self.horizontalSlider = QtWidgets.QSlider(self.tab)
-        self.horizontalSlider.setGeometry(QtCore.QRect(70, 230, 241, 22))
-        self.horizontalSlider.setMaximum(17)
-        self.horizontalSlider.setProperty("value", 10)
+        self.horizontalSlider.setGeometry(QtCore.QRect(80, 230, 231, 22))
+        self.horizontalSlider.setMinimum(250)
+        self.horizontalSlider.setMaximum(500)
+        self.horizontalSlider.setSingleStep(2)
+        self.horizontalSlider.setProperty("value", 1)
         self.horizontalSlider.setOrientation(QtCore.Qt.Horizontal)
         self.horizontalSlider.setObjectName("horizontalSlider")
         self.label_5 = QtWidgets.QLabel(self.tab)
@@ -176,6 +178,8 @@ class CustomMap(QMainWindow, Ui_MainWindow):
         self.radioButton_2.clicked.connect(self.get_map)
         self.radioButton_3.clicked.connect(self.get_map)
 
+    def stat(self):
+        print(self.horizontalSlider.value())
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_PageUp:
@@ -183,6 +187,18 @@ class CustomMap(QMainWindow, Ui_MainWindow):
             self.get_map()
         elif event.key() == Qt.Key_PageDown:
             self.scale_down()
+            self.get_map()
+        elif event.key() == Qt.Key_Up or event.key() == Qt.Key_W:
+            self.up()
+            self.get_map()
+        elif event.key() == Qt.Key_Down or event.key() == Qt.Key_S:
+            self.down()
+            self.get_map()
+        elif event.key() == Qt.Key_Right or event.key() == Qt.Key_D:
+            self.right()
+            self.get_map()
+        elif event.key() == Qt.Key_Left or event.key() == Qt.Key_A:
+            self.left()
             self.get_map()
 
     def get_map(self):
@@ -196,14 +212,14 @@ class CustomMap(QMainWindow, Ui_MainWindow):
             mode = 'sat,skl'
         else:
             mode = 'map'
+        print(5 - 0.01 * scale, scale)
         map_params = {'ll': point,
                       'l': mode,
-                      'z': scale}
+                      'spn': ','.join([str(5 - 0.01 * scale)] * 2)}
         response = check_response(requests.get(static_server, params=map_params))
         with open('image.png', mode='wb') as f:
             f.write(response.content)
         self.label.setPixmap(QPixmap('image.png'))
-        os.remove('image.png')
 
     def scale_up(self):
         self.horizontalSlider.setValue(self.horizontalSlider.value() + 1)
@@ -211,8 +227,31 @@ class CustomMap(QMainWindow, Ui_MainWindow):
     def scale_down(self):
         self.horizontalSlider.setValue(self.horizontalSlider.value() - 1)
 
+    def up(self):
+        num = float(self.lineEdit_4.text())
+        num += 5 - 0.01 * self.horizontalSlider.value()
+        self.lineEdit_4.setText(str(num))
+
+    def down(self):
+        num = float(self.lineEdit_4.text())
+        num -= 5 - 0.01 * self.horizontalSlider.value()
+        self.lineEdit_4.setText(str(num))
+
+    def left(self):
+        num = float(self.lineEdit_3.text())
+        num -= 5 - 0.01 * self.horizontalSlider.value()
+        self.lineEdit_3.setText(str(num))
+
+    def right(self):
+        num = float(self.lineEdit_3.text())
+        num += 5 - 0.01 * self.horizontalSlider.value()
+        self.lineEdit_3.setText(str(num))
+
+
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     ex = CustomMap()
     ex.show()
-    sys.exit(app.exec())
+    app.exec()
+    os.remove('image.png')
+# 37.564931 55.725803
