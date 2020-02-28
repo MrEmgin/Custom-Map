@@ -1,0 +1,90 @@
+{
+  "response": {
+    "GeoObjectCollection": {
+      "metaDataProperty": {
+        "GeocoderResponseMetaData": {
+          "request": "Москва, улица Усачева, 50",
+          "results": "10",
+          "found": "1"
+        }
+      },
+      "featureMember": [
+        {
+          "GeoObject": {
+            "metaDataProperty": {
+              "GeocoderMetaData": {
+                "precision": "exact",
+                "text": "Россия, Москва, улица Усачёва, 50",
+                "kind": "house",
+                "Address": {
+                  "country_code": "RU",
+                  "formatted": "Россия, Москва, улица Усачёва, 50",
+                  "postal_code": "119048",
+                  "Components": [
+                    {
+                      "kind": "country",
+                      "name": "Россия"
+                    },
+                    {
+                      "kind": "province",
+                      "name": "Центральный федеральный округ"
+                    },
+                    {
+                      "kind": "province",
+                      "name": "Москва"
+                    },
+                    {
+                      "kind": "locality",
+                      "name": "Москва"
+                    },
+                    {
+                      "kind": "street",
+                      "name": "улица Усачёва"
+                    },
+                    {
+                      "kind": "house",
+                      "name": "50"
+                    }
+                  ]
+                },
+                "AddressDetails": {
+                  "Country": {
+                    "AddressLine": "Россия, Москва, улица Усачёва, 50",
+                    "CountryNameCode": "RU",
+                    "CountryName": "Россия",
+                    "AdministrativeArea": {
+                      "AdministrativeAreaName": "Москва",
+                      "Locality": {
+                        "LocalityName": "Москва",
+                        "Thoroughfare": {
+                          "ThoroughfareName": "улица Усачёва",
+                          "Premise": {
+                            "PremiseNumber": "50",
+                            "PostalCode": {
+                              "PostalCodeNumber": "119048"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "name": "улица Усачёва, 50",
+            "description": "Москва, Россия",
+            "boundedBy": {
+              "Envelope": {
+                "lowerCorner": "37.560826 55.723486",
+                "upperCorner": "37.569036 55.728119"
+              }
+            },
+            "Point": {
+              "pos": "37.564931 55.725803"
+            }
+          }
+        }
+      ]
+    }
+  }
+}

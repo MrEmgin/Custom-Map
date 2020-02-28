@@ -172,6 +172,8 @@ class CustomMap(QMainWindow, Ui_MainWindow):
         self.initUI()
 
     def initUI(self):
+        self.points = []
+
         self.radioButton.setChecked(True)
         self.pushButton.clicked.connect(self.get_map)
         self.radioButton.clicked.connect(self.get_map)
@@ -216,7 +218,7 @@ class CustomMap(QMainWindow, Ui_MainWindow):
             lower = list(map(float, toponym["boundedBy"]["Envelope"]["lowerCorner"].split()))
             upper = list(map(float, toponym["boundedBy"]["Envelope"]["upperCorner"].split()))
             size = str(abs(lower[0] - upper[0])), str(abs(lower[1] - upper[1]))
-
+            self.points.append(",".join([toponym_longitude, toponym_lattitude, 'comma']))
             if self.radioButton.isChecked():
                 mode = 'map'
             elif self.radioButton_2.isChecked():
@@ -230,7 +232,7 @@ class CustomMap(QMainWindow, Ui_MainWindow):
                 "ll": ",".join([toponym_longitude, toponym_lattitude]),
                 "spn": ",".join(size),
                 "l": mode,
-                'pt': ",".join([toponym_longitude, toponym_lattitude, 'comma'])
+                'pt': "~".join(self.points)
             }
 
             map_api_server = "http://static-maps.yandex.ru/1.x/"
@@ -249,7 +251,8 @@ class CustomMap(QMainWindow, Ui_MainWindow):
             print(5 - 0.01 * scale, scale)
             map_params = {'ll': point,
                           'l': mode,
-                          'spn': ','.join([str(5 - 0.01 * scale)] * 2)}
+                          'spn': ','.join([str(5 - 0.01 * scale)] * 2),
+                          'pt': "~".join(self.points)}
             response = check_response(requests.get(static_server, params=map_params))
         with open('image.png', mode='wb') as f:
             f.write(response.content)
