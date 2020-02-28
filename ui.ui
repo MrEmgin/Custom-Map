@@ -60,6 +60,9 @@
       <property name="text">
        <string>Карта</string>
       </property>
+      <attribute name="buttonGroup">
+       <string notr="true">buttonGroup</string>
+      </attribute>
      </widget>
      <widget class="QRadioButton" name="radioButton_2">
       <property name="geometry">
@@ -78,6 +81,9 @@
       <property name="text">
        <string>Спутник</string>
       </property>
+      <attribute name="buttonGroup">
+       <string notr="true">buttonGroup</string>
+      </attribute>
      </widget>
      <widget class="QRadioButton" name="radioButton_3">
       <property name="geometry">
@@ -96,6 +102,9 @@
       <property name="text">
        <string>Гибрид</string>
       </property>
+      <attribute name="buttonGroup">
+       <string notr="true">buttonGroup</string>
+      </attribute>
      </widget>
      <widget class="QSlider" name="horizontalSlider">
       <property name="geometry">
@@ -336,4 +345,7 @@
  </widget>
  <resources/>
  <connections/>
+ <buttongroups>
+  <buttongroup name="buttonGroup"/>
+ </buttongroups>
 </ui>

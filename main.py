@@ -4,6 +4,7 @@ import requests
 from PyQt5.QtWidgets import QApplication, QMainWindow
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtGui import QPixmap
+from PyQt5.QtCore import Qt
 
 
 class Ui_MainWindow(object):
@@ -26,18 +27,23 @@ class Ui_MainWindow(object):
         font.setPointSize(14)
         self.radioButton.setFont(font)
         self.radioButton.setObjectName("radioButton")
+        self.buttonGroup = QtWidgets.QButtonGroup(MainWindow)
+        self.buttonGroup.setObjectName("buttonGroup")
+        self.buttonGroup.addButton(self.radioButton)
         self.radioButton_2 = QtWidgets.QRadioButton(self.tab)
         self.radioButton_2.setGeometry(QtCore.QRect(30, 100, 131, 31))
         font = QtGui.QFont()
         font.setPointSize(14)
         self.radioButton_2.setFont(font)
         self.radioButton_2.setObjectName("radioButton_2")
+        self.buttonGroup.addButton(self.radioButton_2)
         self.radioButton_3 = QtWidgets.QRadioButton(self.tab)
         self.radioButton_3.setGeometry(QtCore.QRect(30, 150, 131, 51))
         font = QtGui.QFont()
         font.setPointSize(14)
         self.radioButton_3.setFont(font)
         self.radioButton_3.setObjectName("radioButton_3")
+        self.buttonGroup.addButton(self.radioButton_3)
         self.horizontalSlider = QtWidgets.QSlider(self.tab)
         self.horizontalSlider.setGeometry(QtCore.QRect(70, 230, 241, 22))
         self.horizontalSlider.setMaximum(17)
@@ -166,6 +172,18 @@ class CustomMap(QMainWindow, Ui_MainWindow):
     def initUI(self):
         self.radioButton.setChecked(True)
         self.pushButton.clicked.connect(self.get_map)
+        self.radioButton.clicked.connect(self.get_map)
+        self.radioButton_2.clicked.connect(self.get_map)
+        self.radioButton_3.clicked.connect(self.get_map)
+
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_PageUp:
+            self.scale_up()
+            self.get_map()
+        elif event.key() == Qt.Key_PageDown:
+            self.scale_down()
+            self.get_map()
 
     def get_map(self):
         scale = self.horizontalSlider.value()
@@ -187,6 +205,11 @@ class CustomMap(QMainWindow, Ui_MainWindow):
         self.label.setPixmap(QPixmap('image.png'))
         os.remove('image.png')
 
+    def scale_up(self):
+        self.horizontalSlider.setValue(self.horizontalSlider.value() + 1)
+
+    def scale_down(self):
+        self.horizontalSlider.setValue(self.horizontalSlider.value() - 1)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
