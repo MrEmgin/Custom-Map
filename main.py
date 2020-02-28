@@ -202,21 +202,55 @@ class CustomMap(QMainWindow, Ui_MainWindow):
             self.get_map()
 
     def get_map(self):
-        scale = self.horizontalSlider.value()
-        point = ','.join([self.lineEdit_3.text(), self.lineEdit_4.text()])
-        if self.radioButton.isChecked():
-            mode = 'map'
-        elif self.radioButton_2.isChecked():
-            mode = 'sat'
-        elif self.radioButton_3.isChecked():
-            mode = 'sat,skl'
+        req = self.lineEdit.text()
+        if req:
+            geocoder_params = {'apikey': '40d1649f-0493-4b70-98ba-98533de7710b',
+                               'geocode': req,
+                               'format': 'json'}
+            response = check_response(requests.get(geocoder_server, params=geocoder_params))
+
+            json_response = response.json()
+            toponym = json_response["response"]["GeoObjectCollection"]["featureMember"][0]["GeoObject"]
+            toponym_coodrinates = toponym["Point"]["pos"]
+            toponym_longitude, toponym_lattitude = toponym_coodrinates.split(" ")
+            lower = list(map(float, toponym["boundedBy"]["Envelope"]["lowerCorner"].split()))
+            upper = list(map(float, toponym["boundedBy"]["Envelope"]["upperCorner"].split()))
+            size = str(abs(lower[0] - upper[0])), str(abs(lower[1] - upper[1]))
+
+            if self.radioButton.isChecked():
+                mode = 'map'
+            elif self.radioButton_2.isChecked():
+                mode = 'sat'
+            elif self.radioButton_3.isChecked():
+                mode = 'sat,skl'
+            else:
+                mode = 'map'
+            self.horizontalSlider.setValue(int((5 - float(size[0])) / 0.01))
+            map_params = {
+                "ll": ",".join([toponym_longitude, toponym_lattitude]),
+                "spn": ",".join(size),
+                "l": mode,
+                'pt': ",".join([toponym_longitude, toponym_lattitude, 'comma'])
+            }
+
+            map_api_server = "http://static-maps.yandex.ru/1.x/"
+            response = check_response(requests.get(map_api_server, params=map_params))
         else:
-            mode = 'map'
-        print(5 - 0.01 * scale, scale)
-        map_params = {'ll': point,
-                      'l': mode,
-                      'spn': ','.join([str(5 - 0.01 * scale)] * 2)}
-        response = check_response(requests.get(static_server, params=map_params))
+            scale = self.horizontalSlider.value()
+            point = ','.join([self.lineEdit_3.text(), self.lineEdit_4.text()])
+            if self.radioButton.isChecked():
+                mode = 'map'
+            elif self.radioButton_2.isChecked():
+                mode = 'sat'
+            elif self.radioButton_3.isChecked():
+                mode = 'sat,skl'
+            else:
+                mode = 'map'
+            print(5 - 0.01 * scale, scale)
+            map_params = {'ll': point,
+                          'l': mode,
+                          'spn': ','.join([str(5 - 0.01 * scale)] * 2)}
+            response = check_response(requests.get(static_server, params=map_params))
         with open('image.png', mode='wb') as f:
             f.write(response.content)
         self.label.setPixmap(QPixmap('image.png'))
@@ -247,11 +281,19 @@ class CustomMap(QMainWindow, Ui_MainWindow):
         num += 5 - 0.01 * self.horizontalSlider.value()
         self.lineEdit_3.setText(str(num))
 
+    def clear(self):
+        self.lineEdit.setText('')
+        self.lineEdit_2.setText('')
+        self.plainTextEdit.setPlainText('Информация не найдена.')
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     ex = CustomMap()
     ex.show()
     app.exec()
-    os.remove('image.png')
+    try:
+        os.remove('image.png')
+    except FileNotFoundError:
+        pass
 # 37.564931 55.725803
