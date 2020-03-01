@@ -173,15 +173,20 @@ class CustomMap(QMainWindow, Ui_MainWindow):
 
     def initUI(self):
         self.points = []
+        self.postal_code = 'no code'
 
         self.radioButton.setChecked(True)
         self.pushButton.clicked.connect(self.get_map)
         self.radioButton.clicked.connect(self.get_map)
         self.radioButton_2.clicked.connect(self.get_map)
         self.radioButton_3.clicked.connect(self.get_map)
+        self.checkBox.toggled.connect(self.set_post_code)
 
-    def stat(self):
-        print(self.horizontalSlider.value())
+    def set_post_code(self):
+        if self.checkBox.isChecked():
+            self.lineEdit_2.setText(self.lineEdit_2.text() + ', ' + self.postal_code)
+        else:
+            self.lineEdit_2.setText(', '.join(self.lineEdit_2.text().split(', ')[:-1]))
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_PageUp:
@@ -211,6 +216,9 @@ class CustomMap(QMainWindow, Ui_MainWindow):
                                'format': 'json'}
             response = check_response(requests.get(geocoder_server, params=geocoder_params))
 
+            with open('data.json', mode='wb') as f:
+                f.write(response.content)
+
             json_response = response.json()
             toponym = json_response["response"]["GeoObjectCollection"]["featureMember"][0]["GeoObject"]
             toponym_coodrinates = toponym["Point"]["pos"]
@@ -237,6 +245,14 @@ class CustomMap(QMainWindow, Ui_MainWindow):
 
             map_api_server = "http://static-maps.yandex.ru/1.x/"
             response = check_response(requests.get(map_api_server, params=map_params))
+            toponym_address = toponym["metaDataProperty"]["GeocoderMetaData"]["Address"]["formatted"]
+            try:
+                postal_code = toponym["metaDataProperty"]["GeocoderMetaData"]["Address"]["postal_code"]
+            except KeyError:
+                print('error 123')
+                postal_code = 'no code'
+            self.lineEdit_2.setText(f'{toponym_address}{", " + postal_code if self.checkBox.isChecked() else ""}')
+            self.postal_code = postal_code
         else:
             scale = self.horizontalSlider.value()
             point = ','.join([self.lineEdit_3.text(), self.lineEdit_4.text()])
@@ -288,6 +304,7 @@ class CustomMap(QMainWindow, Ui_MainWindow):
         self.lineEdit.setText('')
         self.lineEdit_2.setText('')
         self.plainTextEdit.setPlainText('Информация не найдена.')
+        del self.points[-1]
 
 
 if __name__ == '__main__':
