@@ -1,6 +1,7 @@
 import sys
 import os
 import requests
+import math
 from PyQt5.QtWidgets import QApplication, QMainWindow
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtGui import QPixmap
@@ -46,9 +47,9 @@ class Ui_MainWindow(object):
         self.buttonGroup.addButton(self.radioButton_3)
         self.horizontalSlider = QtWidgets.QSlider(self.tab)
         self.horizontalSlider.setGeometry(QtCore.QRect(80, 230, 231, 22))
-        self.horizontalSlider.setMinimum(250)
-        self.horizontalSlider.setMaximum(500)
-        self.horizontalSlider.setSingleStep(2)
+        self.horizontalSlider.setMinimum(1)
+        self.horizontalSlider.setMaximum(17)
+        self.horizontalSlider.setSingleStep(1)
         self.horizontalSlider.setProperty("value", 1)
         self.horizontalSlider.setOrientation(QtCore.Qt.Horizontal)
         self.horizontalSlider.setObjectName("horizontalSlider")
@@ -163,6 +164,7 @@ def check_response(response):
 geocoder_server = 'http://geocode-maps.yandex.ru/1.x/'
 static_server = 'http://static-maps.yandex.ru/1.x/'
 org_search_server = 'http://search-maps.yandex.ru/v1/'
+coord_to_geo = 0.0000428
 
 
 class CustomMap(QMainWindow, Ui_MainWindow):
@@ -172,8 +174,14 @@ class CustomMap(QMainWindow, Ui_MainWindow):
         self.initUI()
 
     def initUI(self):
+        self.horizontalSlider.setValue(10)
+
         self.points = []
-        self.postal_code = 'no code'
+        self.postal_code = 'индекса нет'
+        self.scale = self.horizontalSlider.value()
+        self.position = 37.564931, 55.725803
+        self.lineEdit_3.setText(str(self.position[0]))
+        self.lineEdit_4.setText(str(self.position[1]))
 
         self.radioButton.setChecked(True)
         self.pushButton.clicked.connect(self.get_map)
@@ -181,6 +189,24 @@ class CustomMap(QMainWindow, Ui_MainWindow):
         self.radioButton_2.clicked.connect(self.get_map)
         self.radioButton_3.clicked.connect(self.get_map)
         self.checkBox.toggled.connect(self.set_post_code)
+        self.actionClose.triggered.connect(sys.exit)
+        self.label.mousePressEvent = self.lable_click
+
+        self.setMouseTracking(True)
+        self.get_map()
+
+    def lable_click(self, event):
+        if event.button() == Qt.LeftButton:
+            lable_pos = 20, 110
+            pos = event.pos()
+            pos = pos.x() - lable_pos[0], pos.y() - lable_pos[1]
+            geo_coords = self.screen_to_geo(pos)
+            self.position = geo_coords
+            self.lineEdit.setText('')
+            self.lineEdit_3.setText(str(self.position[0]))
+            self.lineEdit_4.setText(str(self.position[1]))
+            self.get_map()
+            self.get_information(self.position)
 
     def set_post_code(self):
         if self.checkBox.isChecked():
@@ -208,6 +234,22 @@ class CustomMap(QMainWindow, Ui_MainWindow):
             self.left()
             self.get_map()
 
+    def get_information(self, pos):
+        geocoder_params = {'apikey': '40d1649f-0493-4b70-98ba-98533de7710b',
+                           'geocode': ','.join(map(str, pos)),
+                           'format': 'json'}
+        response = check_response(requests.get(geocoder_server, params=geocoder_params))
+        json_response = response.json()
+        toponym = json_response["response"]["GeoObjectCollection"]["featureMember"][0]["GeoObject"]
+        toponym_coodrinates = toponym["Point"]["pos"]
+        toponym_longitude, toponym_lattitude = toponym_coodrinates.split(" ")
+        lower = list(map(float, toponym["boundedBy"]["Envelope"]["lowerCorner"].split()))
+        upper = list(map(float, toponym["boundedBy"]["Envelope"]["upperCorner"].split()))
+        size = str(abs(lower[0] - upper[0])), str(abs(lower[1] - upper[1]))
+        address = toponym["metaDataProperty"]["GeocoderMetaData"]["Address"]["formatted"]
+        self.plainTextEdit.setPlainText(address)
+        self.lineEdit_2.setText(address)
+
     def get_map(self):
         req = self.lineEdit.text()
         if req:
@@ -215,10 +257,6 @@ class CustomMap(QMainWindow, Ui_MainWindow):
                                'geocode': req,
                                'format': 'json'}
             response = check_response(requests.get(geocoder_server, params=geocoder_params))
-
-            with open('data.json', mode='wb') as f:
-                f.write(response.content)
-
             json_response = response.json()
             toponym = json_response["response"]["GeoObjectCollection"]["featureMember"][0]["GeoObject"]
             toponym_coodrinates = toponym["Point"]["pos"]
@@ -235,27 +273,30 @@ class CustomMap(QMainWindow, Ui_MainWindow):
                 mode = 'sat,skl'
             else:
                 mode = 'map'
-            self.horizontalSlider.setValue(int((5 - float(size[0])) / 0.01))
+            self.horizontalSlider.setValue(14)
             map_params = {
                 "ll": ",".join([toponym_longitude, toponym_lattitude]),
                 "spn": ",".join(size),
                 "l": mode,
-                'pt': "~".join(self.points)
+                'pt': "~".join(self.points),
+                'size': '650,450'
             }
 
-            map_api_server = "http://static-maps.yandex.ru/1.x/"
-            response = check_response(requests.get(map_api_server, params=map_params))
+            response = check_response(requests.get(static_server, params=map_params))
             toponym_address = toponym["metaDataProperty"]["GeocoderMetaData"]["Address"]["formatted"]
             try:
                 postal_code = toponym["metaDataProperty"]["GeocoderMetaData"]["Address"]["postal_code"]
             except KeyError:
-                print('error 123')
-                postal_code = 'no code'
+                postal_code = 'индекса нет'
+            self.clear()
             self.lineEdit_2.setText(f'{toponym_address}{", " + postal_code if self.checkBox.isChecked() else ""}')
             self.postal_code = postal_code
+            self.position = tuple(map(float, [toponym_longitude, toponym_lattitude]))
         else:
-            scale = self.horizontalSlider.value()
-            point = ','.join([self.lineEdit_3.text(), self.lineEdit_4.text()])
+            self.scale = self.horizontalSlider.value()
+            point = ','.join([str(float(self.lineEdit_3.text())), str(float(self.lineEdit_4.text()))])
+
+            self.position = tuple(map(float, point.split(',')))
             if self.radioButton.isChecked():
                 mode = 'map'
             elif self.radioButton_2.isChecked():
@@ -264,10 +305,9 @@ class CustomMap(QMainWindow, Ui_MainWindow):
                 mode = 'sat,skl'
             else:
                 mode = 'map'
-            print(5 - 0.01 * scale, scale)
             map_params = {'ll': point,
                           'l': mode,
-                          'spn': ','.join([str(5 - 0.01 * scale)] * 2),
+                          'z': str(self.scale),
                           'pt': "~".join(self.points)}
             response = check_response(requests.get(static_server, params=map_params))
         with open('image.png', mode='wb') as f:
@@ -276,9 +316,11 @@ class CustomMap(QMainWindow, Ui_MainWindow):
 
     def scale_up(self):
         self.horizontalSlider.setValue(self.horizontalSlider.value() + 1)
+        self.get_map()
 
     def scale_down(self):
         self.horizontalSlider.setValue(self.horizontalSlider.value() - 1)
+        self.get_map()
 
     def up(self):
         num = float(self.lineEdit_4.text())
@@ -300,11 +342,20 @@ class CustomMap(QMainWindow, Ui_MainWindow):
         num += 5 - 0.01 * self.horizontalSlider.value()
         self.lineEdit_3.setText(str(num))
 
-    def clear(self):
+    def clear(self, all=False):
         self.lineEdit.setText('')
         self.lineEdit_2.setText('')
         self.plainTextEdit.setPlainText('Информация не найдена.')
-        del self.points[-1]
+        if all:
+            del self.points[-1]
+
+    def screen_to_geo(self, pos):
+        dy = 225 - pos[1]
+        dx = pos[0] - 300
+        lx = float(self.position[0]) + dx * coord_to_geo * math.pow(2, 17 - self.scale)
+        ly = float(self.position[1]) + dy * coord_to_geo * math.cos(math.radians(self.position[1])) * math.pow(2,
+                                                                                                               17 - self.scale)
+        return lx, ly
 
 
 if __name__ == '__main__':
@@ -316,4 +367,4 @@ if __name__ == '__main__':
         os.remove('image.png')
     except FileNotFoundError:
         pass
-# 37.564931 55.725803
+# 37.564931, 55.725803
